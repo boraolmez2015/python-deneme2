@@ -1,0 +1,44 @@
+import os
+import time
+from twilio.rest import Client
+from dotenv import load_dotenv
+
+# .env içeriğini yükle
+load_dotenv()
+
+ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+AUTH_TOKEN  = os.getenv("TWILIO_AUTH_TOKEN")
+FROM        = os.getenv("TWILIO_FROM")
+TO          = os.getenv("MY_PHONE")
+
+# Güvenli kullanım için basit korumalar:
+# - Tek çağrıda tek SMS
+# - İstersen az sayıda tekrar ve araya gecikme koy (örneğin 3 SMS, 15 sn arayla)
+MAX_MESSAGES = 1          # eğitim amaçlı: 1 mesaj
+DELAY_SECONDS = 15        # iki mesaj arası bekleme (kullanıyorsan)
+
+def send_one_sms(body: str) -> str:
+    if not all([ACCOUNT_SID, AUTH_TOKEN, FROM, TO]):
+        raise RuntimeError("Eksik .env değişkeni. Lütfen .env dosyanı kontrol et.")
+    client = Client(ACCOUNT_SID, AUTH_TOKEN)
+    msg = client.messages.create(
+        body=body,
+        from_=FROM,
+        to=TO
+    )
+    return msg.sid
+
+if __name__ == "__main__":
+    print("Kendi numarana tek bir test SMS'i gönderiliyor...")
+    sid = send_one_sms("Merhaba! Bu bir test SMS'idir. (Kendi numarana)")
+    print("Gönderildi. Message SID:", sid)
+
+    # Eğer birkaç tekrar denemek istersen, aşağıyı açıp MAX_MESSAGES'ı 3 gibi küçük bir değerde tut:
+    """
+    count = 1
+    while count < MAX_MESSAGES:
+        time.sleep(DELAY_SECONDS)
+        sid = send_one_sms(f"Tekrar #{count+1} - test SMS")
+        print("Gönderildi. Message SID:", sid)
+        count += 1
+    """
